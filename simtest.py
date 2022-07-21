@@ -82,7 +82,7 @@ def genAtmSummary(rng):
 
 
 # generate random atm params
-def rand_param(rng, atmSummary, args):
+def rand_param(rng, args):
     ud = galsim.UniformDeviate(rng)
     gd = galsim.GaussianDeviate(rng)
     
@@ -98,30 +98,33 @@ def rand_param(rng, atmSummary, args):
     weights = np.clip(weights, 0.01, 0.75)  # keep weights from straying too far.
     weights /= np.sum(weights)  # renormalize
 
-    L0 = [atmSummary['L0']]*6
     speeds = [ud() * args.maxSpeed for _ in range(6)]
     directions = [ud() * 360 * galsim.degrees for _ in range(6)]
+    return speeds, directions, altitudes, weights
+
+def psfws_param(args):
+    ws = psfws.ParameterGenerator(seed=args.atmSeed)
+    params= ws.draw_parameters(nl=6, location='com')
+    altitudes = [p - ws.h0 + 0.4 for p in params['h']]
+    phi = [params['phi'][i]+360 if params['phi'][i]<0 else params['phi'][i] for i in range(len(params['phi']))]
+    directions = [i*galsim.degrees for i in phi]
+    speeds = params['speed']
+    weights = params['j']
+    return speeds, directions, altitudes, weights
+
+
+def genAtmKwargs(rng, atmSummary, args):
+    L0 = [atmSummary['L0']] * 6
+    if args.usePsfws:
+        speeds, directions, altitudes, weights = psfws_param(args)
+    else:
+        speeds, directions, altitudes, weights = rand_param(rng, args)
     atmKwargs = dict(
         r0_500=atmSummary['r0_500'], L0=L0, speed=speeds, direction=directions,
         altitude=altitudes, r0_weights=weights, screen_size=args.screen_size,
         screen_scale=args.screen_scale, rng=rng
     )
     return atmKwargs
-
-def psfws_param(rng, atmSummary, args):
-    ws = psfws.ParameterGenerator(seed=args.atmSeed)
-    params= ws.draw_parameters(nl=6)
-    params['h'] = [p - ws.h0 + 0.4 for p in params['h']]
-    phi = params['phi']
-    params['phi'] = [phi[i]+360 if phi[i]<0 else phi[i] for i in range(len(phi))]
-    L0 = [atmSummary['L0']] * 6
-    atmKwargs = dict(
-            r0_500=atmSummary['r0_500'], L0=L0, speed=params['speed'],
-            direction=[d * galsim.degrees for d in params['phi']],
-            altitude=params['h'], r0_weights=list(params['j']), screen_size=args.screen_size,
-            screen_scale=args.screen_scale, rng=rng
-        )
-    return(atmKwargs)
 
 
 if __name__ == '__main__':
@@ -158,10 +161,7 @@ if __name__ == '__main__':
     # Generate random atmospheric input statistics
     atmRng = galsim.BaseDeviate(args.atmSeed)
     atmSummary = genAtmSummary(atmRng)
-    if args.usePsfws:
-        atmKwargs = psfws_param(atmRng, atmSummary, args)
-    else:
-        atmKwargs = rand_param(atmRng, atmSummary, args)
+    atmKwargs = genAtmKwargs(atmRng, atmSummary, args)
 
     print(atmKwargs['r0_weights'])
 
