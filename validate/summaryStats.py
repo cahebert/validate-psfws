@@ -45,10 +45,10 @@ def getOutputSummary(d):
     size, e1, e2 = {}, {}, {}
 
     for psf_param, p_sum in zip([d['e1'], d['e2'], d_sigma], [size, e1, e2]):
-        2pcf = comp2pcfTreecorr(d['thx'], d['thy'], psf_param)
+        twopcf = comp2pcfTreecorr(d['thx'], d['thy'], psf_param)
 
-        p_sum['2p_dir_circ'], p_sum['2p_sig_circ'] = get2pcfParams(2pcf)
-        p_sum['2p_dir'], p_sum['2p_sig'] = get2pcfParams(2pcf, circle=False)
+        p_sum['2p_dir_circ'], p_sum['2p_sig_circ'] = get2pcfParams(twopcf)
+        p_sum['2p_dir'], p_sum['2p_sig'] = get2pcfParams(twopcf, circle=False)
         p_sum['autocorr'] = np.var(psf_param)
 
     return size, e1, e2
@@ -58,22 +58,22 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("kind", type=str)
     parser.add_argument("outdir", type=str)
-    parser.add_argument("simdir", type=str, default='/home/groups/burchat/mya')
+    parser.add_argument("--simdir", type=str, default='/home/groups/burchat/mya')
     args = parser.parse_args()
 
     if args.kind == 'psfws':
-        fpath = 'sameh0_psfws/outh_psfws_'
+        kind_path = 'sameh0_psfws/outh_psfws_'
     elif args.kind == 'rand':
-        fpath = 'sameh0_rand/outh_rand_'
+        kind_path = 'sameh0_rand/outh_rand_'
     elif args.kind == 'randMatch':
-        fpath = 'matchSpeedRand/outv_rand_'
+        kind_path = 'matchSpeedRand/outv_rand_'
     else:
         raise ValueError('kind input must be "psfws", "rand", or "randMatch".')
 
     size_sum, e1_sum, e2_sum, atm_sum = [], [], [], []
     for s in initSeeds():
-        file += f'{s}.pkl'
-        file_path = pathlib.Path.joinpath(args.simdir, file)
+        fname = kind_path + f'{s}.pkl'
+        file_path = pathlib.Path.joinpath(pathlib.Path(args.simdir), fname)
         try:
             d = pickle.load(open(file_path, 'rb'))
         except FileNotFoundError:
@@ -88,5 +88,5 @@ if __name__ == '__main__':
     for summary, name in zip([size_sum, e1_sum, e2_sum, atm_sum],
                              ['size', 'e1', 'e2', 'atm']):
         df = pd.DataFrame(data=summary, index=initSeeds())
-        save_path = pathlib.Path.joinpath(args.outdir, f'{name}_summary_df.p')
+        save_path = pathlib.Path.joinpath(pathlib.Path(args.outdir), f'{name}_summary_df.p')
         pickle.dump(df, open(save_path, 'wb'))
