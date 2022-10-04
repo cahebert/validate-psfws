@@ -21,7 +21,8 @@ def get2pcfParams(kk, circle=True):
     xi_img = kk.xi
     if circle:  # set pixels outside circle to 0
         xi_img[kk.rnom > kk.max_sep] = 0
-    xi_moms = galsim.hsm.FindAdaptiveMom(galsim.Image(xi_img))
+    new_params = galsim.hsm.HSMParams(max_mom2_iter=1500)
+    xi_moms = galsim.hsm.FindAdaptiveMom(galsim.Image(xi_img), hsmparams=new_params)
 
     phi = np.arctan2(xi_moms.observed_shape.g2, xi_moms.observed_shape.g1)
     phi *= 180 / np.pi
@@ -47,8 +48,15 @@ def getOutputSummary(d):
     for psf_param, p_sum in zip([d['e1'], d['e2'], d_sigma], [size, e1, e2]):
         twopcf = comp2pcfTreecorr(d['thx'], d['thy'], psf_param)
 
-        p_sum['2p_dir_circ'], p_sum['2p_sig_circ'] = get2pcfParams(twopcf)
-        p_sum['2p_dir'], p_sum['2p_sig'] = get2pcfParams(twopcf, circle=False)
+    # try:
+    #    p_sum['2p_dir_circ'], p_sum['2p_sig_circ'] = get2pcfParams(twopcf)
+    # except galsim.errors.GalSimHSMError:
+    #    print(f'moments estimation failed!')
+        try:
+            p_sum['2p_dir'], p_sum['2p_sig'] = get2pcfParams(twopcf, circle=False)
+        except galsim.errors.GalSimHSMError:
+            print(f'moments estimation failed!')
+            p_sum['2p_dir'], p_sum['2p_sig'] = 0,0 
         p_sum['autocorr'] = np.var(psf_param)
 
     return size, e1, e2
@@ -57,7 +65,7 @@ def getOutputSummary(d):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("kind", type=str)
-    parser.add_argument("outdir", type=str)
+    parser.add_argument("--outdir", type=str, default='../summaries/')
     parser.add_argument("--simdir", type=str, default='/home/groups/burchat/mya')
     args = parser.parse_args()
 
@@ -88,5 +96,6 @@ if __name__ == '__main__':
     for summary, name in zip([size_sum, e1_sum, e2_sum, atm_sum],
                              ['size', 'e1', 'e2', 'atm']):
         df = pd.DataFrame(data=summary, index=initSeeds())
-        save_path = pathlib.Path.joinpath(pathlib.Path(args.outdir), f'{name}_summary_df.p')
+        f_name = f'{name}_summary_{args.kind}_df.p'
+        save_path = pathlib.Path.joinpath(pathlib.Path(args.outdir), f_name)
         pickle.dump(df, open(save_path, 'wb'))
