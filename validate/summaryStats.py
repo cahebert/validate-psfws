@@ -55,7 +55,7 @@ def getOutputSummary(d):
         try:
             p_sum['2p_dir'], p_sum['2p_sig'] = get2pcfParams(twopcf, circle=False)
         except galsim.errors.GalSimHSMError:
-            print(f'moments estimation failed!')
+            print('moments estimation failed!')
             p_sum['2p_dir'], p_sum['2p_sig'] = 0,0 
         p_sum['autocorr'] = np.var(psf_param)
 
@@ -64,7 +64,7 @@ def getOutputSummary(d):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("kind", type=str)
+    parser.add_argument("--kind", type=str)
     parser.add_argument("--outdir", type=str, default='../summaries/')
     parser.add_argument("--simdir", type=str, default='/home/groups/burchat/mya')
     args = parser.parse_args()
