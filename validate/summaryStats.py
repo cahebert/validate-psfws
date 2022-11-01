@@ -53,7 +53,7 @@ def getOutputSummary(d):
     # except galsim.errors.GalSimHSMError:
     #    print(f'moments estimation failed!')
         try:
-            p_sum['2p_dir'], p_sum['2p_sig'] = get2pcfParams(twopcf, circle=False)
+            p_sum['2p_dir'], p_sum['2p_sig'] = get2pcfParams(twopcf, circle=True)
         except galsim.errors.GalSimHSMError:
             print('moments estimation failed!')
             p_sum['2p_dir'], p_sum['2p_sig'] = 0,0 
@@ -75,8 +75,10 @@ if __name__ == '__main__':
         kind_path = 'sameh0_rand/outh_rand_'
     elif args.kind == 'randMatch':
         kind_path = 'matchSpeedRand/outv_rand_'
+    elif args.kind == 'randMatchProfile':
+        kind_path = 'matchProfileRand/outp_rand_'
     else:
-        raise ValueError('kind input must be "psfws", "rand", or "randMatch".')
+        raise ValueError('kind input must be "psfws", "rand", "randMatch", or "randMatchProfile".')
 
     size_sum, e1_sum, e2_sum, atm_sum = [], [], [], []
     for s in initSeeds():

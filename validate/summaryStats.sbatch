@@ -11,6 +11,6 @@
 source ~/setup.sh
 conda activate wfsim
 
-python summaryStats.py --kind "psfws"
-python summaryStats.py --kind "rand"
-python summaryStats.py --kind "randMatch"
+#python summaryStats.py --kind "psfws"
+#python summaryStats.py --kind "rand"
+python summaryStats.py --kind "randMatchProfile" --outdir "../summariesProfile"

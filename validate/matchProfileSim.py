@@ -80,7 +80,7 @@ def genAtmSummary(rng):
         'r0_500':r0_500
     }
 
-
+"""
 # generate random atm params
 def rand_maxSpeeds():
     seeds = list(range(6, 11)) + [22, 23, 25, 26, 27] + list(range(30, 40))
@@ -97,6 +97,7 @@ def rand_maxSpeeds():
     rand_maxGround = np.max(grdSpeedPsfws)    
     rand_maxFree_atm = np.max([np.max(f_atmspeedPsfws[i]) for i in range(len(f_atmspeedPsfws))])   
     return rand_maxGround, rand_maxFree_atm
+"""
 
 def rand_param(rng, args):
     ud = galsim.UniformDeviate(rng)
@@ -114,9 +115,8 @@ def rand_param(rng, args):
     weights = np.clip(weights, 0.01, 0.75)  # keep weights from straying too far.
     weights /= np.sum(weights)  # renormalize
     
-    rand_maxGround, rand_maxFree_atm = rand_maxSpeeds()
-    speed0 = ud() * rand_maxGround
-    speeds = [speed0] + [ud() * rand_maxFree_atm for _ in range(5)]
+    speed0 = ud() * args.rand_maxGround
+    speeds = [speed0] + [ud() * args.rand_maxFree_atm for _ in range(5)]
     directions = [ud() * 360 * galsim.degrees for _ in range(6)]
     return speeds, directions, altitudes, weights
 
@@ -183,6 +183,8 @@ if __name__ == '__main__':
             help="Number of branches for parrallelization?")
     parser.add_argument('--usePsfws', action='store_true')
     parser.add_argument('--useRand', action='store_true')
+    parser.add_argument('--rand_maxGround', type=float, default=24.3)
+    parser.add_argument('--rand_maxFree_atm', type=float,default=78.52)
     args = parser.parse_args()
 
     # Generate random atmospheric input statistics
