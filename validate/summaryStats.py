@@ -139,7 +139,7 @@ if __name__ == '__main__':
         # kind_path = 'matchSpeedRand/outv_rand_'
         kind_path = 'matchProfileRand/outp_rand_'
     else:
-        raise ValueError('kind input must be "psfws", "rand", or "randMatch".')
+        raise ValueError('kind input must be "psfws", "rand", "randMatch", or "randMatchProfile".')
 
     size_sum, e1_sum, e2_sum, atm_sum = {}, {}, {}, {}
     for s in initSeeds():
