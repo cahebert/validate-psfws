@@ -1,0 +1,8 @@
+./summaries/**
+./summariesCircle/**
+./summariesProfile/**
+./slurmfiles/**
+./.ipynb_checkpoints/**
+./validate/.ipynb_checkpoints/**
+.DS_Store
+.DS_Store?
