@@ -6,3 +6,5 @@
 ./validate/.ipynb_checkpoints/**
 .DS_Store
 .DS_Store?
+validate/__pycache__/**
+validate/sbatch_get_summary.sl
