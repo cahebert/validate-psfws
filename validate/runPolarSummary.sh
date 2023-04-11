@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 POOL=1 #number of cores on which to run threads
-TIME=1:30:00
+TIME=3:30:00
 PART=kipac
 MEM=4GB
 

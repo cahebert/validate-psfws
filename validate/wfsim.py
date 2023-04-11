@@ -5,7 +5,6 @@ import pickle
 import galsim
 import numpy as np
 from scipy.optimize import bisect
-from astropy.utils.console import ProgressBar
 import psfws
 
 # utilities
@@ -98,25 +97,26 @@ def rand_param(rng, args):
     weights = np.clip(weights, 0.01, 0.75)  # keep weights from straying too far.
     weights /= np.sum(weights)  # renormalize
     
-    psfws_speeds, _, _, _ = psfws_param(args)
-    rand_maxSpeed = np.max(psfws_speeds)
-    speeds = [ud() * rand_maxSpeed for _ in range(6)]
-    directions = [ud() * 360 * galsim.degrees for _ in range(6)]
+    if args.kind == 'match':
+        _, directions, _, _ = psfws_param(args)
+    else:
+        directions = [ud() * 360 * galsim.degrees for _ in range(6)]
+    speeds = [ud() * args.maxSpeed for _ in range(6)]
     return speeds, directions, altitudes, weights
 
 def psfws_param(args):
-    ws = psfws.ParameterGenerator(seed=args.atmSeed)
-    params= ws.draw_parameters(nl=6, location='com')
+    ws = psfws.ParameterGenerator()
+    pt = ws.data_gl.index[args.i]
+    params = ws.get_parameters(pt, nl=6, location='com')
     altitudes = [p - ws.h0 + 0.2 for p in params['h']]
-    phi = [params['phi'][i]+360 if params['phi'][i]<0 else params['phi'][i] for i in range(len(params['phi']))]
-    directions = [i*galsim.degrees for i in phi]
+    directions = [i*galsim.degrees for i in params['phi']]
     speeds = params['speed']
     weights = params['j']
     return speeds, directions, altitudes, weights
 
 def set_screen_size(speeds):
     vmax = np.max(speeds)
-    if vmax > 45:
+    if vmax > 35:
         screen_size = args.screen_size
     else:
         screen_size = vmax * 30
@@ -124,15 +124,23 @@ def set_screen_size(speeds):
 
 def genAtmKwargs(rng, atmSummary, args):
     L0 = [atmSummary['L0']] * 6
-    if args.usePsfws:
+    if args.kind == 'psfws':
         speeds, directions, altitudes, weights = psfws_param(args)
         rng.discard(18)
-    elif args.useRand:
+    elif args.kind == 'rand':
         speeds, directions, altitudes, weights = rand_param(rng, args)
+    elif args.kind == 'match':
+        speeds, directions, altitudes, weights = rand_param(rng, args)
+        rng.discard(6)
     atmKwargs = dict(
-        r0_500=atmSummary['r0_500'], L0=L0, speed=speeds, direction=directions,
-        altitude=altitudes, r0_weights=weights, screen_size=set_screen_size(speeds),
-        screen_scale=args.screen_scale, rng=rng
+        r0_500=atmSummary['r0_500'],
+        L0=L0, speed=speeds,
+        direction=directions,
+        altitude=altitudes,
+        r0_weights=weights,
+        screen_size=set_screen_size(speeds),
+        screen_scale=args.screen_scale,
+        rng=rng
     )
     return atmKwargs
 
@@ -149,8 +157,6 @@ if __name__ == '__main__':
             help="Number of PSF simulated")
     parser.add_argument('--nphot', type=int, default=int(1e6),
             help="Number of photons")
-    parser.add_argument('--screen_size', type=float, default=1350,
-            help="Size of atmospheric screen in meters")
     parser.add_argument('--screen_scale', type=float, default=0.1,
             help="Resolution of atmospheric screen in meters")
     parser.add_argument('--fov', type=float, default=3.5, 
@@ -165,17 +171,15 @@ if __name__ == '__main__':
     parser.add_argument('--outfile', type=str, default='outpsfws.pkl')
     parser.add_argument('--nPool', type=int, default=10,
             help="Number of branches for parrallelization?")
-    parser.add_argument('--usePsfws', action='store_true')
-    parser.add_argument('--useRand', action='store_true')
+    parser.add_argument('--screen_size', type=int, default=1050)
+    parser.add_argument('--i', type=int)
+    parser.add_argument('--kind', type=str, default='psfws')
     args = parser.parse_args()
 
     # Generate random atmospheric input statistics
     atmRng = galsim.BaseDeviate(args.atmSeed)
     atmSummary = genAtmSummary(atmRng)
     atmKwargs = genAtmKwargs(atmRng, atmSummary, args)
-
-    print(atmKwargs['r0_weights'])
-
 
     atm = galsim.Atmosphere(**atmKwargs)
     aper = galsim.Aperture(
@@ -186,9 +190,7 @@ if __name__ == '__main__':
     r0 = atmSummary['r0_500'] * (atmSummary['wavelength']/500)**1.2
     kcrit = 0.2
     kmax = kcrit / r0
-    print("instantiating")
     atm.instantiate(kmax=kmax, check='phot')
-    print("done")
 
     psfRng = galsim.BaseDeviate(args.psfSeed)
     ud = galsim.UniformDeviate(psfRng)
@@ -227,10 +229,8 @@ if __name__ == '__main__':
 
     output = []
     with Pool(args.nPool) as pool:
-        with ProgressBar(args.npsf) as bar:
-            for o in pool.imap_unordered(f, zip(thxs, thys, psfPhotSeeds)):
-                output.append(o)
-                bar.update()
+        for o in pool.imap_unordered(f, zip(thxs, thys, psfPhotSeeds)):
+            output.append(o)
 
     output = lodToDol(output)
     output['args'] = args
