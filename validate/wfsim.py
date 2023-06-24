@@ -23,13 +23,11 @@ def generateInput(rng):
     """
     picks random filter, airmass, and raw seeing values
     """
-    # choosing a random filter
     ud = galsim.UniformDeviate(rng)
-    filters = 'ugrizy'
-    ifilter = int(ud()*6)
-    filterName = filters[ifilter]
-    # choosing random airmass and rawseeing values
-    # different air mass for different field angles
+#     filters = 'ugrizy'
+#     ifilter = int(ud()*6)
+#     filterName = filters[ifilter]
+    filterName = 'i'
     airmass = 1
     # atm PSF at zenith w.out effects from airmass and wavelength variations
     rawSeeing = ud()*(1.6-0.6)+0.6
@@ -179,6 +177,7 @@ if __name__ == '__main__':
     # Generate random atmospheric input statistics
     atmRng = galsim.BaseDeviate(args.atmSeed)
     atmSummary = genAtmSummary(atmRng)
+    atmSummary['atmSeed'] = args.atmSeed
     atmKwargs = genAtmKwargs(atmRng, atmSummary, args)
 
     atm = galsim.Atmosphere(**atmKwargs)
