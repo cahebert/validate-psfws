@@ -120,7 +120,7 @@ def get2pcfSlice(annulus, nBins, shear=False):
 def getOutputSummary(d, data=False, outputImgs=True, outputCoords=True):
     """Extract summary parameters from simulation output file."""
     
-    d_sigma = d['sigma'] - np.mean(d['sigma'])
+    d_sigma = (d['sigma'] - np.mean(d['sigma'])) * 0.2 #to arcsec
     thx, thy = d['thx'], d['thy']
     
     if data: # convert from microns to degrees

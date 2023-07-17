@@ -5,7 +5,7 @@ TIME=1:00:00
 PART=kipac
 MEM=4GB
 
-for kind in psfws rand match
+for kind in actualRand psfws rand match
 do
 cat << EOF > sbatch_get_summary.sl 
 #!/bin/bash
@@ -19,6 +19,7 @@ cat << EOF > sbatch_get_summary.sl
 
 source ~/load_modules.sh
 
+python3 polarSumStats.py $kind --nPool=$POOL
 python3 getAtmSummaries.py $kind --nPool=$POOL
 EOF
 
